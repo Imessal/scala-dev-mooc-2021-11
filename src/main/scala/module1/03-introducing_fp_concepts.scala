@@ -280,7 +280,6 @@ object hof{
     object List {
       def apply[T](v: T*): List[T] = if (v.isEmpty) Nil else new ::(v.head, apply(v.tail: _*))
     }
-    
 
 
     /**
@@ -295,16 +294,16 @@ object hof{
       * Метод mkString возвращает строковое представление списка, с учетом переданного разделителя
       *
       */
-     def mkString[T](list: List[T], separator: Char): String = {
-         @tailrec
-         def go(list: List[T], acc: String): String = {
-             list match {
-                 case ::(head, tail) => go(tail, head.toString + separator)
-                 case Nil => acc
-             }
-         }
-         go(list, "")
-     }
+    def mkString[T](list: List[T], separator: Char): String = {
+        @tailrec
+        def go(list: List[T], acc: String): String = {
+            list match {
+                case ::(head, tail) => go(tail, acc + head.toString + separator)
+                case Nil => acc.dropRight(1)
+            }
+        }
+        go(list, "")
+    }
 
     /**
       * Конструктор, позволяющий создать список из N - го числа аргументов
@@ -313,33 +312,32 @@ object hof{
       * Например вот этот метод принимает некую последовательность аргументов с типом Int и выводит их на печать
       * def printArgs(args: Int*) = args.foreach(println(_))
       */
-     def consN[T](args: T*): List[T] = {
-         @tailrec
-         def go(args: Seq[T], acc: List[T]): List[T] = {
-             args.headOption match {
-                 case Some(value) => go(args.tail, acc.::(value))
-                 case None => acc
-             }
-         }
-         go(args, Nil)
-     }
-
+    def consN[T](args: T*): List[T] = {
+        @tailrec
+        def go(args: Seq[T], acc: List[T]): List[T] = {
+            args.headOption match {
+                case Some(value) => go(args.tail, acc.::(value))
+                case None => reverse(acc)
+            }
+        }
+        go(args, Nil)
+    }
 
     /**
       *
       * Реализовать метод reverse который позволит заменить порядок элементов в списке на противоположный
       */
-     def reverse[T](list: List[T]): List[T] = {
-         @tailrec
-         def go(list: List[T], acc: List[T]): List[T] = {
-             list match {
-                 case ::(head, tail) => go(tail, acc.::(head))
-                 case Nil => acc
-             }
-         }
+    def reverse[T](list: List[T]): List[T] = {
+        @tailrec
+        def go(list: List[T], acc: List[T]): List[T] = {
+            list match {
+                case ::(head, tail) => go(tail, acc.::(head))
+                case Nil => acc
+            }
+        }
 
-         go(list, Nil)
-     }
+        go(list, Nil)
+    }
 
     /**
       *
@@ -350,11 +348,10 @@ object hof{
          def go(list: List[T], acc: List[N]): List[N] = {
              list match {
                  case ::(head, tail) => go(tail, acc.::(f(head)))
-                 case Nil => acc
+                 case Nil => reverse(acc)
              }
          }
-         val mapped = go(list, Nil)
-         reverse(mapped)
+         go(list, Nil)
      }
 
 
@@ -362,27 +359,26 @@ object hof{
       *
       * Реализовать метод filter для списка который будет фильтровать список по некому условию
       */
-     def filter[T](list: List[T], f: T => Boolean): List[T] = {
-         @tailrec
-         def go(list: List[T], acc: List[T]): List[T] = {
-             list match {
-                 case ::(head, tail) =>
-                     if(f(head)) go(tail, acc) else go(tail, acc.::(head))
-                 case Nil => acc
-             }
-         }
-         val filtered = go(list, Nil)
-         reverse(filtered)
-     }
+    def filter[T](list: List[T], f: T => Boolean): List[T] = {
+        @tailrec
+        def go(list: List[T], acc: List[T]): List[T] = {
+            list match {
+                case ::(head, tail) =>
+                    if(f(head)) go(tail, acc.::(head)) else go(tail, acc)
+                case Nil => reverse(acc)
+            }
+        }
+        go(list, Nil)
+    }
 
     /**
       *
       * Написать функцию incList котрая будет принимать список Int и возвращать список,
       * где каждый элемент будет увеличен на 1
       */
-     def incList(list: List[Int]): List[Int] = {
-         map[Int, Int](list, _ + 1)
-     }
+    def incList(list: List[Int]): List[Int] = {
+        map[Int, Int](list, _ + 1)
+    }
 
 
     /**
@@ -390,8 +386,7 @@ object hof{
       * Написать функцию shoutString котрая будет принимать список String и возвращать список,
       * где к каждому элементу будет добавлен префикс в виде '!'
       */
-     def shoutString(list: List[String]): List[String] = {
-         map[String, String](list, _ + "!")
-     }
-
+    def shoutString(list: List[String]): List[String] = {
+        map[String, String](list, _ + "!")
+    }
  }
