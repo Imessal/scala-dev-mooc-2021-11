@@ -29,9 +29,10 @@ package object zio_homework {
 	lazy val guess = getStrLn.flatMap(zParseInt).tapError(_ => putStrLn("It's not a number :("))
 	lazy val guessProgram: URIO[Console with Random, ExitCode] = {
 		for {
-			_ <- zio.console.putStrLn("Guess number?")
-			number <- nextIntBounded(3)
+			_ 		   <- zio.console.putStrLn("Guess number?")
+			number 	   <- nextIntBounded(3)
 			userNumber <- guess.eventually
+
 			_ <- if (number == userNumber) {
 				putStrLn("Right!")
 			} else {
@@ -45,9 +46,11 @@ package object zio_homework {
 	 *
 	 */
 
-	//???
-	def doWhile[A](effect: Task[A]) = {
-		effect.eventually
+	def doWhile[R, E, A](effect: ZIO[R, E, A])(p: A => Boolean): ZIO[R, E, A] = {
+		for {
+			result <- effect
+			eff    <- if(p(result)) ZIO.succeed(result) else doWhile(effect)(p)
+		} yield eff
 	}
 
 	/**
@@ -56,15 +59,12 @@ package object zio_homework {
 	 * Используйте эффект "load" из пакета config
 	 */
 
-	def loadConfigOrDefault(configPath: String): Task[ConfigObjectSource] = {
-		val path = Paths.get(configPath)
-		Task {
-			ConfigSource.file(path)
-		}.tapError(_ => {
-			for {
-				default <- config.load
-			} yield default
-		})
+	def loadConfigOrDefault: ZIO[Console, Throwable, Unit] = {
+		val defaultConfig = config.AppConfig(appName = "foo", appUrl = "bar")
+
+		config.load.tapError(_ => ZIO.succeed(defaultConfig)).flatMap { conf =>
+			putStrLn(conf.toString)
+		}
 	}
 
 
@@ -107,9 +107,9 @@ package object zio_homework {
 
 	lazy val app: appType = {
 		for {
-			_ <- putStrLn("Starting...")
+			_ 	   <- putStrLn("Starting...")
 			result <- zEffectsSum // закомментил для последнего задания result <- printEffectRunningTime(zEffectsSum)
-			_ <- putStrLn(s"Result: $result")
+			_      <- putStrLn(s"Result: $result")
 		} yield ()
 	}
 
@@ -121,7 +121,7 @@ package object zio_homework {
 	val counter: UIO[Ref[Int]] = Ref.make(0)
 	lazy val zEffectsSumSpeedUp: ZIO[Random with Clock, Nothing, Ref[Int]] = for {
 		ref <- counter
-		_ <- ZIO.foreachPar(effects) { eff =>
+		_ 	<- ZIO.foreachPar(effects) { eff =>
 			eff.flatMap(value => ref.getAndUpdate(_ + value))
 		}
 	} yield {
@@ -130,10 +130,10 @@ package object zio_homework {
 
 	lazy val appSpeedUp: ZIO[Console with Clock with Random, IOException, Unit] = {
 		for {
-			_ <- putStrLn("Starting...")
+			_ 		  <- putStrLn("Starting...")
 			resultRef <- zEffectsSumSpeedUp // закомментил для последнего задания result <- printEffectRunningTime(zEffectsSumSpeedUp)
-			result <- resultRef.get
-			_ <- putStrLn(s"Result: $result")
+			result 	  <- resultRef.get
+			_ 		  <- putStrLn(s"Result: $result")
 		} yield ()
 	}
 
@@ -164,7 +164,7 @@ package object zio_homework {
 	 * Подготовьте его к запуску и затем запустите воспользовавшись ZioHomeWorkApp
 	 */
 
-	lazy val runApp = {
+	lazy val runApp: URIO[Clock with Random with Console, ExitCode] = {
 		appWithTimeLogg.provideSomeLayer[Clock with Random with Console](RunningTimeService.live).exitCode
 	}
 

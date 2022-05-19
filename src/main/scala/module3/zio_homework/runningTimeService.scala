@@ -17,10 +17,10 @@ object runningTimeService {
 		class ServiceImpl extends Service {
 			override def myPrintEffectRunningTime[R, E, A](zio: ZIO[R, E, A]): ZIO[Console with Clock with R, E, A] = {
 				for {
-					start <- currentTime
-					z <- zio
+					start  <- currentTime
+					z 	   <- zio
 					finish <- currentTime
-					_ <- putStrLn(s"Running time: ${finish - start}").orDie
+					_ 	   <- putStrLn(s"Running time: ${finish - start}").orDie
 				} yield z
 			}
 		}
